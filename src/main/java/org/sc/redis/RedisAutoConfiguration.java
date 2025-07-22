@@ -2,8 +2,9 @@ package org.sc.redis;
 
 import org.sc.redis.config.RedisConfig;
 import org.sc.redis.properties.RedisProperties;
-import org.sc.redis.utils.RedisIdWorker;
 import org.sc.redis.utils.RedisClient;
+import org.sc.redis.utils.RedisIdWorker;
+import org.sc.redis.utils.RedisLock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +19,8 @@ public class RedisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(RedisClient.class)
-    public RedisClient redisClient(StringRedisTemplate redisTemplate) {
-        return new RedisClient(redisTemplate);
+    public RedisClient redisClient(StringRedisTemplate redisTemplate, RedisLock redisLock) {
+        return new RedisClient(redisTemplate, redisLock);
     }
 
     @Bean
@@ -28,6 +29,11 @@ public class RedisAutoConfiguration {
         return new RedisIdWorker(redisTemplate);
     }
 
+    @Bean
+    @ConditionalOnMissingBean(RedisLock.class)
+    public RedisLock redisLock(StringRedisTemplate redisTemplate) {
+        return new RedisLock(redisTemplate);
+    }
 
 }
 

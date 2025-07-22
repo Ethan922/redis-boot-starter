@@ -1,13 +1,11 @@
 package org.sc.redis.utils;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-@RequiredArgsConstructor
 public class RedisIdWorker {
 
     private final StringRedisTemplate redisTemplate;
@@ -26,6 +24,10 @@ public class RedisIdWorker {
      * 默认的日期格式
      */
     private static final String DATE_TIME_FORMAT = "yyyyMMdd";
+
+    public RedisIdWorker(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     /**
      * 通过redis生成全局唯一id

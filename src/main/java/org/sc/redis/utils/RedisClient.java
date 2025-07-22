@@ -7,14 +7,12 @@ import cn.hutool.json.JSONUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-@RequiredArgsConstructor
 public class RedisClient {
 
     // 默认过期时间(30)
@@ -27,6 +25,13 @@ public class RedisClient {
     private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
 
     private final StringRedisTemplate redisTemplate;
+
+    private final RedisLock redisLock;
+
+    public RedisClient(StringRedisTemplate redisTemplate, RedisLock redisLock) {
+        this.redisTemplate = redisTemplate;
+        this.redisLock = redisLock;
+    }
 
     @Data
     @NoArgsConstructor
@@ -136,7 +141,7 @@ public class RedisClient {
             return null;
         }
         // 锁自旋
-        while (!lock(lockKey, lockTime, lockTimeUnit)) {
+        while (!redisLock.tryLock(lockKey, lockTime, lockTimeUnit)) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -146,7 +151,7 @@ public class RedisClient {
         try {
             return queryWithPenetration(key, clazz, dbQuery, param, time, timeUnit);
         } finally {
-            unLock(lockKey);
+            redisLock.unlock(lockKey);
         }
     }
 
@@ -270,7 +275,7 @@ public class RedisClient {
         }
         // 已过期，需要更新缓存
         // 获取锁
-        if (!lock(lockKey, lockTime, lockTimeUnit)) {
+        if (!redisLock.tryLock(lockKey, lockTime, lockTimeUnit)) {
             // 获取锁失败，有其他线程在更新缓存，返回旧数据
             return r;
         }
@@ -281,7 +286,7 @@ public class RedisClient {
                 R newR = dbQuery.apply(param);
                 this.setWithLogicalExpire(key, newR, time, timeUnit);
             } finally {
-                unLock(lockKey);
+                redisLock.unlock(lockKey);
             }
         });
         return r;
@@ -306,37 +311,5 @@ public class RedisClient {
     public <R, T> R queryWithLogicalExpire(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
                                            long time, TimeUnit timeUnit, String lockKey) {
         return this.queryWithLogicalExpire(key, clazz, dbQuery, param, time, timeUnit, lockKey, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
-    }
-
-    /**
-     * 加锁
-     *
-     * @param lockKey  锁的key
-     * @param time     锁的过期时间
-     * @param timeUnit 时间单位
-     * @return 是否加锁成功 加锁成功返回true，否则返回false
-     */
-    public boolean lock(String lockKey, long time, TimeUnit timeUnit) {
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", time, timeUnit);
-        return Boolean.TRUE.equals(success);
-    }
-
-    /**
-     * 以默认时间加锁，默认过期时间为30秒
-     *
-     * @param lockKey 锁的key
-     * @return 是否加锁成功 加锁成功返回true，否则返回false
-     */
-    public boolean lock(String lockKey) {
-        return this.lock(lockKey, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
-    }
-
-    /**
-     * 释放锁
-     *
-     * @param lockKey 锁的key
-     */
-    public void unLock(String lockKey) {
-        redisTemplate.delete(lockKey);
     }
 }
