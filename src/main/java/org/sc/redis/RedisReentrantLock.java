@@ -22,6 +22,16 @@ public class RedisReentrantLock implements RLock {
     private final String name;
 
     /**
+     * 锁的超时时间
+     */
+    private long timeout = DEFAULT_LOCK_TTL;
+
+    /**
+     * 锁的时间单位
+     */
+    private TimeUnit timeUnit = DEFAULT_TIME_UNIT;
+
+    /**
      * 锁的默认超时时间：20
      */
     private static final long DEFAULT_LOCK_TTL = 20L;
@@ -92,6 +102,8 @@ public class RedisReentrantLock implements RLock {
      */
     @Override
     public boolean tryLock(long timeout, TimeUnit timeUnit) {
+        this.timeout = timeout;
+        this.timeUnit = timeUnit;
         String threadId = ID_PREFIX + Thread.currentThread().getId();
         Long success = redisTemplate.execute(
                 LOCK_SCRIPT,
@@ -100,8 +112,6 @@ public class RedisReentrantLock implements RLock {
                 String.valueOf(timeUnit.toSeconds(timeout))
         );
         return Long.valueOf(1).equals(success);
-//        Boolean success = redisTemplate.opsForValue().setIfAbsent(name, threadId, timeout, timeUnit);
-//        return Boolean.TRUE.equals(success);
     }
 
 
@@ -132,6 +142,11 @@ public class RedisReentrantLock implements RLock {
      */
     @Override
     public void unlock() {
-        redisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(name), ID_PREFIX + Thread.currentThread().getId());
+        redisTemplate.execute(
+                UNLOCK_SCRIPT,
+                Collections.singletonList(name),
+                ID_PREFIX + Thread.currentThread().getId(),
+                String.valueOf(timeUnit.toSeconds(timeout))
+        );
     }
 }
