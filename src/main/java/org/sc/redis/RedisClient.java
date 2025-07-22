@@ -26,11 +26,8 @@ public class RedisClient {
 
     private final StringRedisTemplate redisTemplate;
 
-    private final RedisLock redisLock;
-
-    public RedisClient(StringRedisTemplate redisTemplate, RedisLock redisLock) {
+    public RedisClient(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
-        this.redisLock = redisLock;
     }
 
     @Data
@@ -123,7 +120,7 @@ public class RedisClient {
      * @param param        查询函数的参数
      * @param time         过期时间
      * @param timeUnit     时间单位
-     * @param lockKey      锁的key
+     * @param lockName      锁的名称
      * @param lockTime     锁的过期时间
      * @param lockTimeUnit 锁的过期时间单位
      * @param <R>          返回结果类型
@@ -131,7 +128,7 @@ public class RedisClient {
      * @return
      */
     public <R, T> R queryWithPenetrationAndMutex(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
-                                                 long time, TimeUnit timeUnit, String lockKey, long lockTime, TimeUnit lockTimeUnit) {
+                                                 long time, TimeUnit timeUnit, String lockName, long lockTime, TimeUnit lockTimeUnit) {
         String jsonStr = redisTemplate.opsForValue().get(key);
         if (StrUtil.isNotBlank(jsonStr)) {
             return JSONUtil.toBean(jsonStr, clazz);
@@ -140,8 +137,9 @@ public class RedisClient {
         if (jsonStr != null) {
             return null;
         }
+        Lock lock = getLock(lockName);
         // 锁自旋
-        while (!redisLock.tryLock(lockKey, lockTime, lockTimeUnit)) {
+        while (!lock.tryLock(lockName, lockTime, lockTimeUnit)) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -151,7 +149,7 @@ public class RedisClient {
         try {
             return queryWithPenetration(key, clazz, dbQuery, param, time, timeUnit);
         } finally {
-            redisLock.unlock(lockKey);
+            lock.unlock(lockName);
         }
     }
 
@@ -213,7 +211,7 @@ public class RedisClient {
      * @param clazz        返回结果类型的字节码对象
      * @param dbQuery      数据库查询函数
      * @param param        查询函数的参数
-     * @param lockKey      锁的key
+     * @param lockName      锁的名称
      * @param lockTime     锁的过期时间
      * @param lockTimeUnit 锁的过期时间单位
      * @param <R>          返回结果类型
@@ -221,8 +219,8 @@ public class RedisClient {
      * @return
      */
     public <R, T> R queryWithPenetrationAndMutex(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
-                                                 String lockKey, long lockTime, TimeUnit lockTimeUnit) {
-        return this.queryWithPenetrationAndMutex(key, clazz, dbQuery, param, DEFAULT_TTL, DEFAULT_TIME_UNIT, lockKey, lockTime, lockTimeUnit);
+                                                 String lockName, long lockTime, TimeUnit lockTimeUnit) {
+        return this.queryWithPenetrationAndMutex(key, clazz, dbQuery, param, DEFAULT_TTL, DEFAULT_TIME_UNIT, lockName, lockTime, lockTimeUnit);
     }
 
     /**
@@ -234,14 +232,14 @@ public class RedisClient {
      * @param clazz   返回结果类型的字节码对象
      * @param dbQuery 数据库查询函数
      * @param param   查询函数的参数
-     * @param lockKey 锁的key
+     * @param lockName 锁的名称
      * @param <R>     返回结果类型
      * @param <T>     查询函数的参数类型
      * @return
      */
     public <R, T> R queryWithPenetrationAndMutex(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
-                                                 long time, TimeUnit timeUnit, String lockKey) {
-        return this.queryWithPenetrationAndMutex(key, clazz, dbQuery, param, time, timeUnit, lockKey, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
+                                                 long time, TimeUnit timeUnit, String lockName) {
+        return this.queryWithPenetrationAndMutex(key, clazz, dbQuery, param, time, timeUnit, lockName, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
     }
 
     /**
@@ -254,7 +252,7 @@ public class RedisClient {
      * @param param        查询函数的参数
      * @param time         数据过期时间
      * @param timeUnit     数据的过期时间单位
-     * @param lockKey      锁的key
+     * @param lockName      锁的名称
      * @param lockTime     锁的过期时间
      * @param lockTimeUnit 锁的过期时间单位
      * @param <R>          返回结果类型
@@ -262,7 +260,7 @@ public class RedisClient {
      * @return
      */
     public <R, T> R queryWithLogicalExpire(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
-                                           long time, TimeUnit timeUnit, String lockKey, long lockTime, TimeUnit lockTimeUnit) {
+                                           long time, TimeUnit timeUnit, String lockName, long lockTime, TimeUnit lockTimeUnit) {
         String jsonStr = redisTemplate.opsForValue().get(key);
         if (StrUtil.isBlank(jsonStr)) {
             return null;
@@ -275,7 +273,8 @@ public class RedisClient {
         }
         // 已过期，需要更新缓存
         // 获取锁
-        if (!redisLock.tryLock(lockKey, lockTime, lockTimeUnit)) {
+        Lock lock = getLock(lockName);
+        if (!lock.tryLock(lockName, lockTime, lockTimeUnit)) {
             // 获取锁失败，有其他线程在更新缓存，返回旧数据
             return r;
         }
@@ -286,7 +285,7 @@ public class RedisClient {
                 R newR = dbQuery.apply(param);
                 this.setWithLogicalExpire(key, newR, time, timeUnit);
             } finally {
-                redisLock.unlock(lockKey);
+                lock.unlock(lockName);
             }
         });
         return r;
@@ -303,13 +302,17 @@ public class RedisClient {
      * @param param    查询函数的参数
      * @param time     数据过期时间
      * @param timeUnit 数据的过期时间单位
-     * @param lockKey  锁的key
+     * @param lockName  锁的名称
      * @param <R>      返回结果类型
      * @param <T>      查询函数的参数类型
      * @return
      */
     public <R, T> R queryWithLogicalExpire(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
-                                           long time, TimeUnit timeUnit, String lockKey) {
-        return this.queryWithLogicalExpire(key, clazz, dbQuery, param, time, timeUnit, lockKey, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
+                                           long time, TimeUnit timeUnit, String lockName) {
+        return this.queryWithLogicalExpire(key, clazz, dbQuery, param, time, timeUnit, lockName, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
+    }
+
+    public Lock getLock(String name) {
+        return new RedisLock(redisTemplate, name);
     }
 }

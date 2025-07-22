@@ -10,20 +10,14 @@ public class RedisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(RedisClient.class)
-    public RedisClient redisClient(StringRedisTemplate redisTemplate, RedisLock redisLock) {
-        return new RedisClient(redisTemplate, redisLock);
+    public RedisClient redisClient(StringRedisTemplate redisTemplate) {
+        return new RedisClient(redisTemplate);
     }
 
     @Bean
     @ConditionalOnMissingBean(RedisIdWorker.class)
     public RedisIdWorker idWorker(StringRedisTemplate redisTemplate) {
         return new RedisIdWorker(redisTemplate);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(RedisLock.class)
-    public RedisLock redisLock(StringRedisTemplate redisTemplate) {
-        return new RedisLock(redisTemplate);
     }
 
 }

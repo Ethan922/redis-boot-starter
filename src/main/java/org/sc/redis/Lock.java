@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit;
 
 public interface Lock {
 
+    String getName();
+
     /**
      * 尝试获取锁
      *
