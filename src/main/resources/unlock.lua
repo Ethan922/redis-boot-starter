@@ -2,20 +2,17 @@ local key = KEYS[1] --锁的名称
 local threadId = ARGV[1] -- 锁的持有者
 local timeout = ARGV[2] -- 锁的超时时间
 -- 判断是否是锁持有者
-local holdCount = redis.call("hget", key, threadId)
-if holdCount then
-    -- 是锁持有者，锁持有数量减1
-    if tonumber(holdCount) > 0 then
-        -- hincrby在key或field不存在是会自动创建
-        redis.call("hincrby", key, threadId, -1)
-        redis.call("expire", key, timeout)
-    end
-    -- 判断持有数量是否小于等于0，如果是删除锁
-    holdCount = redis.call("hget", key, threadId)
-    if tonumber(holdCount) <= 0 then
-        redis.call("del", key)
-    end
-    return 1
-else
+if redis.call("hexists", key, threadId) == 0 then
+    -- 不是锁持有者
     return 0
 end
+-- 是锁持有者，锁持有数量减1
+local holdCount = redis.call("hincrby", key, threadId, -1)
+if holdCount > 0 then
+    -- 大于0更新锁的超时时间
+    redis.call("expire", key, timeout)
+else
+    -- 小于等于0，删除锁
+    redis.call("del", key)
+end
+return 1
