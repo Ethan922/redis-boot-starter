@@ -40,10 +40,10 @@ public class RedisConfig {
 
     private GenericObjectPoolConfig<?> createPoolConfig() {
         GenericObjectPoolConfig<?> poolConfig = new GenericObjectPoolConfig<>();
-        poolConfig.setMaxTotal(redisProperties.getPool().getMaxActive());
-        poolConfig.setMaxIdle(redisProperties.getPool().getMaxIdle());
-        poolConfig.setMinIdle(redisProperties.getPool().getMinIdle());
-        poolConfig.setMaxWaitMillis(redisProperties.getPool().getMaxWait());
+        poolConfig.setMaxTotal(redisProperties.getLettuce().getPool().getMaxActive());
+        poolConfig.setMaxIdle(redisProperties.getLettuce().getPool().getMaxIdle());
+        poolConfig.setMinIdle(redisProperties.getLettuce().getPool().getMinIdle());
+        poolConfig.setMaxWaitMillis(redisProperties.getLettuce().getPool().getMaxWait().toMillis());
         return poolConfig;
     }
 
