@@ -139,7 +139,7 @@ public class RedisClient {
         }
         Lock lock = getLock(lockName);
         // 锁自旋
-        while (!lock.tryLock(lockName, lockTime, lockTimeUnit)) {
+        while (!lock.tryLock(lockTime, lockTimeUnit)) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -149,7 +149,7 @@ public class RedisClient {
         try {
             return queryWithPenetration(key, clazz, dbQuery, param, time, timeUnit);
         } finally {
-            lock.unlock(lockName);
+            lock.unlock();
         }
     }
 
@@ -274,7 +274,7 @@ public class RedisClient {
         // 已过期，需要更新缓存
         // 获取锁
         Lock lock = getLock(lockName);
-        if (!lock.tryLock(lockName, lockTime, lockTimeUnit)) {
+        if (!lock.tryLock(lockTime, lockTimeUnit)) {
             // 获取锁失败，有其他线程在更新缓存，返回旧数据
             return r;
         }
@@ -285,7 +285,7 @@ public class RedisClient {
                 R newR = dbQuery.apply(param);
                 this.setWithLogicalExpire(key, newR, time, timeUnit);
             } finally {
-                lock.unlock(lockName);
+                lock.unlock();
             }
         });
         return r;

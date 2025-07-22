@@ -57,13 +57,12 @@ public class RedisLock implements Lock {
     /**
      * 尝试获取锁
      *
-     * @param name     锁的名称
      * @param timeout  锁的默认超时时间
      * @param timeUnit 时间范围
      * @return 成功返回true 否则返回false
      */
     @Override
-    public boolean tryLock(String name, long timeout, TimeUnit timeUnit) {
+    public boolean tryLock(long timeout, TimeUnit timeUnit) {
         String threadId = ID_PREFIX + Thread.currentThread().getId();
         Boolean success = redisTemplate.opsForValue().setIfAbsent(name, threadId, timeout, timeUnit);
         return Boolean.TRUE.equals(success);
@@ -74,33 +73,29 @@ public class RedisLock implements Lock {
      * 尝试获取锁
      * 使用默认的时间单位(秒)
      *
-     * @param name 锁的名称
      * @return 成功返回true 否则返回false
      */
     @Override
-    public boolean tryLock(String name, long timeout) {
-        return tryLock(name, timeout, DEFAULT_TIME_UNIT);
+    public boolean tryLock(long timeout) {
+        return tryLock(timeout, DEFAULT_TIME_UNIT);
     }
 
     /**
      * 尝试获取锁
      * 使用默认的过期时间(20s)
      *
-     * @param name 锁的名称
      * @return 成功返回true 否则返回false
      */
     @Override
-    public boolean tryLock(String name) {
-        return tryLock(name, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
+    public boolean tryLock() {
+        return tryLock(DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
     }
 
     /**
      * 释放锁
-     *
-     * @param name 锁的名称
      */
     @Override
-    public void unlock(String name) {
+    public void unlock() {
         redisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(name), ID_PREFIX + Thread.currentThread().getId());
     }
 }
