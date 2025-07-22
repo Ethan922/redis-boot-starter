@@ -18,7 +18,7 @@ public class RedisLock implements Lock {
     private final String name;
 
     /**
-     * 锁的默认过期时间：20
+     * 锁的默认超时时间：20
      */
     private static final long DEFAULT_LOCK_TTL = 20L;
 
@@ -58,7 +58,7 @@ public class RedisLock implements Lock {
      * 尝试获取锁
      *
      * @param name     锁的名称
-     * @param timeout  锁的默认过期时间
+     * @param timeout  锁的默认超时时间
      * @param timeUnit 时间范围
      * @return 成功返回true 否则返回false
      */

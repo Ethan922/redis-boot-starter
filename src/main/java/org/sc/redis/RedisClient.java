@@ -120,9 +120,9 @@ public class RedisClient {
      * @param param        查询函数的参数
      * @param time         过期时间
      * @param timeUnit     时间单位
-     * @param lockName      锁的名称
-     * @param lockTime     锁的过期时间
-     * @param lockTimeUnit 锁的过期时间单位
+     * @param lockName     锁的名称
+     * @param lockTime     锁的超时时间
+     * @param lockTimeUnit 锁的超时时间单位
      * @param <R>          返回结果类型
      * @param <T>          查询函数的参数类型
      * @return
@@ -211,9 +211,9 @@ public class RedisClient {
      * @param clazz        返回结果类型的字节码对象
      * @param dbQuery      数据库查询函数
      * @param param        查询函数的参数
-     * @param lockName      锁的名称
-     * @param lockTime     锁的过期时间
-     * @param lockTimeUnit 锁的过期时间单位
+     * @param lockName     锁的名称
+     * @param lockTime     锁的超时时间
+     * @param lockTimeUnit 锁的超时时间单位
      * @param <R>          返回结果类型
      * @param <T>          查询函数的参数类型
      * @return
@@ -228,13 +228,13 @@ public class RedisClient {
      * 使用互斥锁控制只有一个线程查询数据库
      * 设置锁的默认过期时间，默认过期时间为30秒
      *
-     * @param key     key
-     * @param clazz   返回结果类型的字节码对象
-     * @param dbQuery 数据库查询函数
-     * @param param   查询函数的参数
+     * @param key      key
+     * @param clazz    返回结果类型的字节码对象
+     * @param dbQuery  数据库查询函数
+     * @param param    查询函数的参数
      * @param lockName 锁的名称
-     * @param <R>     返回结果类型
-     * @param <T>     查询函数的参数类型
+     * @param <R>      返回结果类型
+     * @param <T>      查询函数的参数类型
      * @return
      */
     public <R, T> R queryWithPenetrationAndMutex(String key, Class<R> clazz, Function<T, R> dbQuery, T param,
@@ -252,9 +252,9 @@ public class RedisClient {
      * @param param        查询函数的参数
      * @param time         数据过期时间
      * @param timeUnit     数据的过期时间单位
-     * @param lockName      锁的名称
-     * @param lockTime     锁的过期时间
-     * @param lockTimeUnit 锁的过期时间单位
+     * @param lockName     锁的名称
+     * @param lockTime     锁的超时时间
+     * @param lockTimeUnit 锁的超时时间单位
      * @param <R>          返回结果类型
      * @param <T>          查询函数的参数类型
      * @return
@@ -302,7 +302,7 @@ public class RedisClient {
      * @param param    查询函数的参数
      * @param time     数据过期时间
      * @param timeUnit 数据的过期时间单位
-     * @param lockName  锁的名称
+     * @param lockName 锁的名称
      * @param <R>      返回结果类型
      * @param <T>      查询函数的参数类型
      * @return
