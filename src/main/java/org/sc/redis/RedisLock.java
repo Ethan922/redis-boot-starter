@@ -1,4 +1,4 @@
-package org.sc.redis.utils;
+package org.sc.redis;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;

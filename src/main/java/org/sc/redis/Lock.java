@@ -1,4 +1,4 @@
-package org.sc.redis.utils;
+package org.sc.redis;
 
 import java.util.concurrent.TimeUnit;
 

@@ -1,4 +1,4 @@
-package org.sc.redis.utils;
+package org.sc.redis;
 
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
