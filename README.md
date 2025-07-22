@@ -2,7 +2,7 @@
 
 ## 功能概述
 
-本项目提供了一套基于Spring Data Redis封装的Redis客户端工具类，简化了Redis在业务场景中的使用，主要包括以下功能：
+封装了一套基于Redis的简单工具类，主要包括以下功能：
 
 ### 1. 全局唯一ID生成（RedisIdWorker）
 - 使用`时间戳` + `计数器`方式生成全局唯一ID
@@ -18,10 +18,9 @@
   - 异步更新缓存
 
 #### 分布式锁
-- 基于Redis的分布式锁实现
-- 支持指定锁的过期时间
-- 默认锁过期时间为20秒
-- 提供锁的获取与释放接口
+- 基于Redis的分布式锁
+- 支持指定锁的超时时间
+- 使用lua脚本实现释放锁操作的原子性
 
 ## 使用说明
 ### 1. 引入依赖（pom.xml）
@@ -33,29 +32,7 @@
 </dependency>
 ```
 
-### 2. 配置Redis连接
-在`application.yml`或`application.properties`中配置Redis连接信息
-
-```
-spring:
-  redis:
-    host: localhost
-    port: 6379
-    password: xxxxxx
-    database: 0
-    timeout: 5000
-    pool:
-        # 连接池最大连接数（使用负值表示没有限制）
-        max-active: 50
-        # 连接池最大阻塞等待时间，单位ms（使用负值表示没有限制）
-        max-wait: 3000
-        # 连接池中的最大空闲连接数
-        max-idle: 20
-        # 连接池中的最小空闲连接数
-        min-idle: 2
-```
-
-### 3. 使用示例
+### 2. 使用示例
 - **生成全局唯一ID**
   ```java
   @Autowired
@@ -108,3 +85,21 @@ spring:
       "lockKey"
   );
   ```
+
+- **分布式锁**
+
+  尝试获取锁
+
+  ```
+  Lock lock = redisClient.getLock("lockName");
+  boolean isLock = lock.tryLock("lockName", 30, TimeUnit.SECONDS) // 获取成功返回true 否则返回false
+  ```
+
+  释放锁
+
+  ```
+  lock.unlock("lockName");
+  ```
+
+  
+
