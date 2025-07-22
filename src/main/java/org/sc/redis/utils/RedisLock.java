@@ -58,6 +58,19 @@ public class RedisLock implements Lock {
         return Boolean.TRUE.equals(success);
     }
 
+
+    /**
+     * 尝试获取锁
+     * 使用默认的时间单位(秒)
+     *
+     * @param lockKey 锁的key
+     * @return 成功返回true 否则返回false
+     */
+    @Override
+    public boolean tryLock(String lockKey, long timeout) {
+        return tryLock(lockKey, timeout, DEFAULT_TIME_UNIT);
+    }
+
     /**
      * 尝试获取锁
      * 使用默认的过期时间(20s)
