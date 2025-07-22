@@ -22,17 +22,12 @@ public class RedisReentrantLock implements RLock {
     private final String name;
 
     /**
-     * 锁的超时时间
+     * 锁的超时释放时间，单位为秒
      */
     private long timeout = DEFAULT_LOCK_TTL;
 
     /**
-     * 锁的时间单位
-     */
-    private TimeUnit timeUnit = DEFAULT_TIME_UNIT;
-
-    /**
-     * 锁的默认超时时间：20
+     * 锁的默认超时释放时间：20
      */
     private static final long DEFAULT_LOCK_TTL = 20L;
 
@@ -96,14 +91,13 @@ public class RedisReentrantLock implements RLock {
     /**
      * 尝试获取锁
      *
-     * @param timeout  锁的超时时间
+     * @param timeout  锁的超时释放时间
      * @param timeUnit 时间单位
      * @return 成功返回true 否则返回false
      */
     @Override
     public boolean tryLock(long timeout, TimeUnit timeUnit) {
-        this.timeout = timeout;
-        this.timeUnit = timeUnit;
+        this.timeout = timeUnit.toSeconds(timeout);
         String threadId = ID_PREFIX + Thread.currentThread().getId();
         Long success = redisTemplate.execute(
                 LOCK_SCRIPT,
@@ -128,7 +122,7 @@ public class RedisReentrantLock implements RLock {
 
     /**
      * 尝试获取锁
-     * 使用默认的过期时间(20s)
+     * 使用默认的超时释放时间(20s)
      *
      * @return 成功返回true 否则返回false
      */
@@ -146,7 +140,7 @@ public class RedisReentrantLock implements RLock {
                 UNLOCK_SCRIPT,
                 Collections.singletonList(name),
                 ID_PREFIX + Thread.currentThread().getId(),
-                String.valueOf(timeUnit.toSeconds(timeout))
+                String.valueOf(TimeUnit.SECONDS.toSeconds(timeout))
         );
     }
 }

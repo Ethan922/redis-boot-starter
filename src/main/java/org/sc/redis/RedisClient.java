@@ -121,8 +121,8 @@ public class RedisClient {
      * @param time         过期时间
      * @param timeUnit     时间单位
      * @param lockName     锁的名称
-     * @param lockTime     锁的超时时间
-     * @param lockTimeUnit 锁的超时时间单位
+     * @param lockTime     锁的超时释放时间
+     * @param lockTimeUnit 锁的超时释放时间单位
      * @param <R>          返回结果类型
      * @param <T>          查询函数的参数类型
      * @return
@@ -212,8 +212,8 @@ public class RedisClient {
      * @param dbQuery      数据库查询函数
      * @param param        查询函数的参数
      * @param lockName     锁的名称
-     * @param lockTime     锁的超时时间
-     * @param lockTimeUnit 锁的超时时间单位
+     * @param lockTime     锁的超时释放时间
+     * @param lockTimeUnit 锁的超时释放时间单位
      * @param <R>          返回结果类型
      * @param <T>          查询函数的参数类型
      * @return
@@ -253,8 +253,8 @@ public class RedisClient {
      * @param time         数据过期时间
      * @param timeUnit     数据的过期时间单位
      * @param lockName     锁的名称
-     * @param lockTime     锁的超时时间
-     * @param lockTimeUnit 锁的超时时间单位
+     * @param lockTime     锁的超时释放时间
+     * @param lockTimeUnit 锁的超时释放时间单位
      * @param <R>          返回结果类型
      * @param <T>          查询函数的参数类型
      * @return
