@@ -3,12 +3,16 @@ package org.sc.redis;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class RedisLock implements Lock {
+/**
+ * 基于Redis实现的可重入分布式锁
+ */
+public class RedisReentrantLock implements RLock {
 
     private final StringRedisTemplate redisTemplate;
 
@@ -37,18 +41,43 @@ public class RedisLock implements Lock {
      */
     private static final DefaultRedisScript<Long> UNLOCK_SCRIPT;
 
+    /**
+     * 获取锁的lua脚本
+     */
+    private static final DefaultRedisScript<Long> LOCK_SCRIPT;
+
     // 初始化lua脚本
     static {
         UNLOCK_SCRIPT = new DefaultRedisScript<>();
         UNLOCK_SCRIPT.setLocation(new ClassPathResource("unlock.lua"));
         UNLOCK_SCRIPT.setResultType(Long.TYPE);
+
+        LOCK_SCRIPT = new DefaultRedisScript<>();
+        LOCK_SCRIPT.setLocation(new ClassPathResource("lock.lua"));
+        LOCK_SCRIPT.setResultType(Long.TYPE);
     }
 
-    public RedisLock(StringRedisTemplate redisTemplate, String name) {
+    public RedisReentrantLock(StringRedisTemplate redisTemplate, String name) {
         this.redisTemplate = redisTemplate;
         this.name = name;
     }
 
+    /**
+     * 获取锁的持有数量
+     *
+     * @return 锁的持有数量
+     */
+    @Override
+    public long getHoldCount() {
+        String holdCount = (String) redisTemplate.opsForHash().get(name, ID_PREFIX + Thread.currentThread().getId());
+        return StringUtils.isEmpty(holdCount) ? 0L : Long.parseLong(holdCount);
+    }
+
+    /**
+     * 获取锁的名称
+     *
+     * @return 锁的名称
+     */
     @Override
     public String getName() {
         return name;
@@ -57,15 +86,22 @@ public class RedisLock implements Lock {
     /**
      * 尝试获取锁
      *
-     * @param timeout  锁的默认超时时间
-     * @param timeUnit 时间范围
+     * @param timeout  锁的超时时间
+     * @param timeUnit 时间单位
      * @return 成功返回true 否则返回false
      */
     @Override
     public boolean tryLock(long timeout, TimeUnit timeUnit) {
         String threadId = ID_PREFIX + Thread.currentThread().getId();
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(name, threadId, timeout, timeUnit);
-        return Boolean.TRUE.equals(success);
+        Long success = redisTemplate.execute(
+                LOCK_SCRIPT,
+                Collections.singletonList(name),
+                threadId,
+                String.valueOf(timeUnit.toSeconds(timeout))
+        );
+        return Long.valueOf(1).equals(success);
+//        Boolean success = redisTemplate.opsForValue().setIfAbsent(name, threadId, timeout, timeUnit);
+//        return Boolean.TRUE.equals(success);
     }
 
 

@@ -2,8 +2,23 @@ package org.sc.redis;
 
 import java.util.concurrent.TimeUnit;
 
-public interface Lock {
+/**
+ * 基于Redis的可重入锁
+ */
+public interface RLock {
 
+    /**
+     * 获取锁的持有数量
+     *
+     * @return 锁的持有数量
+     */
+    long getHoldCount();
+
+    /**
+     * 获取锁的名称
+     *
+     * @return 锁的名称
+     */
     String getName();
 
     /**

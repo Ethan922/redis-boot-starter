@@ -6,6 +6,7 @@
 
 ### 1. 全局唯一ID生成（RedisIdWorker）
 - 使用`时间戳` + `计数器`方式生成全局唯一ID
+- 趋势递增
 
 ### 2. 缓存操作（RedisClient）
 #### 缓存查询
@@ -19,8 +20,9 @@
 
 #### 分布式锁
 - 基于Redis的分布式锁
-- 支持指定锁的超时时间
-- 使用lua脚本实现释放锁操作的原子性
+- 可重入
+- 支持指定超时时间
+- 使用lua脚本实现加锁解锁
 
 ## 使用说明
 ### 1. 引入依赖（pom.xml）
@@ -91,14 +93,14 @@
   尝试获取锁
 
   ```
-  Lock lock = redisClient.getLock("lockName");
-  boolean isLock = lock.tryLock("lockName", 30, TimeUnit.SECONDS) // 获取成功返回true 否则返回false
+  RLock lock = redisClient.getLock("lockName");
+  boolean isLock = lock.tryLock(30, TimeUnit.SECONDS) // 获取成功返回true 否则返回false
   ```
 
   释放锁
 
   ```
-  lock.unlock("lockName");
+  lock.unlock();
   ```
 
   

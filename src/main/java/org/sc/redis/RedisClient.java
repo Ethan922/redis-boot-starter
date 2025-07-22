@@ -137,7 +137,7 @@ public class RedisClient {
         if (jsonStr != null) {
             return null;
         }
-        Lock lock = getLock(lockName);
+        RLock lock = getLock(lockName);
         // 锁自旋
         while (!lock.tryLock(lockTime, lockTimeUnit)) {
             try {
@@ -273,7 +273,7 @@ public class RedisClient {
         }
         // 已过期，需要更新缓存
         // 获取锁
-        Lock lock = getLock(lockName);
+        RLock lock = getLock(lockName);
         if (!lock.tryLock(lockTime, lockTimeUnit)) {
             // 获取锁失败，有其他线程在更新缓存，返回旧数据
             return r;
@@ -312,7 +312,7 @@ public class RedisClient {
         return this.queryWithLogicalExpire(key, clazz, dbQuery, param, time, timeUnit, lockName, DEFAULT_LOCK_TTL, DEFAULT_TIME_UNIT);
     }
 
-    public Lock getLock(String name) {
-        return new RedisLock(redisTemplate, name);
+    public RLock getLock(String name) {
+        return new RedisReentrantLock(redisTemplate, name);
     }
 }
