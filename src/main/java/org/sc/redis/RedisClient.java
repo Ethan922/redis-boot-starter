@@ -278,6 +278,14 @@ public class RedisClient {
             // 获取锁失败，有其他线程在更新缓存，返回旧数据
             return r;
         }
+        // 获取锁成功，重新查询缓存
+        jsonStr = redisTemplate.opsForValue().get(key);
+        redisData = JSONUtil.toBean(jsonStr, RedisData.class);
+        r = JSONUtil.toBean((JSONObject) redisData.getData(), clazz);
+        // 判断是否过期
+        if (LocalDateTime.now().isBefore(redisData.getExpireTime())) {
+            return r;
+        }
         // 异步更新缓存
         ThreadUtil.execAsync(() -> {
             try {
